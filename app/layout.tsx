@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     "Automação e inteligência artificial para transformar atendimento, vendas e operação.",
   icons: {
-    icon: "https://bio.automatizedigital.cloud/logo.png",
+    icon: "/logo.png",
   },
 };
 

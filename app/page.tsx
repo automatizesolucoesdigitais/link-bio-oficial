@@ -136,7 +136,7 @@ export default function Home() {
           <div className="profile-mark" aria-label="Logo da Automatize">
             <div className="profile-mark-ring" aria-hidden="true" />
             <img
-              src="https://bio.automatizedigital.cloud/logo.png"
+              src="/logo.png"
               alt="Automatize Soluções Digitais"
             />
           </div>
