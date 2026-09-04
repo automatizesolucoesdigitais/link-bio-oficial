@@ -27,6 +27,9 @@
 !package.json
 !package-lock.json
 
+# Copiado pelo estagio de runtime do Dockerfile
+!nginx.conf
+
 # Nunca entram, mesmo que apareçam dentro das pastas acima
 **/node_modules
 **/.next
