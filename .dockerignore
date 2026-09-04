@@ -1,0 +1,36 @@
+# Lista de PERMISSÃO: tudo é ignorado e só o necessário ao `next build` entra.
+# Mais seguro que uma lista de exclusão — nada novo vaza para a imagem por
+# esquecimento, e o scaffold do Cloudflare (worker/, db/, .openai/) fica de fora.
+
+**
+
+# Código da aplicação
+!app/**
+!components/**
+!hooks/**
+!lib/**
+
+# Estáticos servidos como estão (fotos dos serviços, ícones)
+!public/**
+
+# CSS do shadcn — app/globals.css o importa via "../vendor/..."
+!vendor/**
+
+# Configuração de build
+!next.config.ts
+!postcss.config.mjs
+!tsconfig.json
+!next-env.d.ts
+!eslint.config.mjs
+
+# Manifesto de dependências (npm ci exige o lock)
+!package.json
+!package-lock.json
+
+# Nunca entram, mesmo que apareçam dentro das pastas acima
+**/node_modules
+**/.next
+**/out
+**/dist
+**/*.log
+**/.DS_Store

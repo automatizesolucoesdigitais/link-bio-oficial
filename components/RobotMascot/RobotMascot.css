@@ -1,0 +1,321 @@
+/*
+ * Mascote robô — camada decorativa.
+ * A posição vem do positioning manager (JS) e chega como --rb-x / --rb-y.
+ * O elemento fica ancorado em 0,0 e só usa transform, para nunca provocar
+ * reflow. Reaproveita --cyan e o easing do projeto.
+ */
+
+.rb-root {
+  --rb-size: 46px;
+  --rb-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --rb-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --rb-x: 0px;
+  --rb-y: 0px;
+  --rb-move-ms: 600ms;
+  --rb-travel-tilt: 0deg;
+  --rb-body-tilt: 0deg;
+  --rb-head-tilt: 0deg;
+  --rb-eye-x: 0px;
+  --rb-eye-y: 0px;
+  --rb-arm-left: 0deg;
+  --rb-arm-right: 0deg;
+  --rb-scale: 1;
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  width: var(--rb-size);
+  height: calc(var(--rb-size) * 1.27);
+  opacity: 1;
+  pointer-events: none;
+  transform: translate3d(var(--rb-x), var(--rb-y), 0) scale(var(--rb-scale));
+  transition:
+    transform var(--rb-move-ms) var(--rb-spring),
+    opacity 380ms ease;
+  will-change: transform;
+}
+
+@media (min-width: 560px) {
+  .rb-root {
+    --rb-size: 64px;
+  }
+}
+
+@media (min-width: 880px) {
+  .rb-root {
+    --rb-size: 82px;
+  }
+}
+
+.rb-root[data-hidden] {
+  opacity: 0;
+}
+
+/* Em trânsito o mascote fica translúcido: o trajeto pode cruzar texto por
+   uma fração de segundo, e conteúdo sempre tem prioridade sobre o enfeite. */
+.rb-root[data-state="moving"],
+.rb-root[data-scrolling] {
+  opacity: 0.5;
+}
+
+/* Inclinação do conjunto durante o deslocamento e a reação ao scroll. */
+.rb-float {
+  width: 100%;
+  height: 100%;
+  animation: rb-breathe 5.2s ease-in-out infinite;
+}
+
+.rb-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* ---------- partes animáveis ---------- */
+
+.rb-head,
+.rb-body,
+.rb-arm,
+.rb-face,
+.rb-glow,
+.rb-eye {
+  transform-box: view-box;
+  transition: transform 520ms var(--rb-ease);
+}
+
+.rb-head {
+  transform-origin: 60px 64px;
+  transform: rotate(var(--rb-head-tilt));
+}
+
+.rb-body {
+  transform-origin: 60px 136px;
+  transform: rotate(var(--rb-body-tilt));
+}
+
+.rb-arm-left {
+  transform-origin: 34px 88px;
+  transform: rotate(var(--rb-arm-left));
+}
+
+.rb-arm-right {
+  transform-origin: 86px 88px;
+  transform: rotate(var(--rb-arm-right));
+}
+
+.rb-face {
+  transform: translate(var(--rb-eye-x), var(--rb-eye-y));
+  transition: transform 420ms var(--rb-ease);
+}
+
+.rb-glow {
+  opacity: 0.8;
+  transition: opacity 600ms ease;
+}
+
+/* ---------- expressões ---------- */
+
+.rb-mouth {
+  transition: d 320ms var(--rb-ease);
+}
+
+.rb-root[data-mood="happy"] .rb-mouth {
+  d: path("M53 43c2.6 4.8 11.4 4.8 14 0");
+}
+
+.rb-root[data-mood="curious"] .rb-mouth {
+  d: path("M56 45c1.6 1.8 6.4 1.8 8 0");
+}
+
+.rb-root[data-mood="happy"] .rb-glow,
+.rb-root[data-pointing] .rb-glow {
+  opacity: 1;
+}
+
+/* Olhar direcionado quando não há mira calculada. */
+.rb-root[data-mood="lookLeft"] .rb-face {
+  transform: translate(-2.4px, 0);
+}
+.rb-root[data-mood="lookRight"] .rb-face {
+  transform: translate(2.4px, 0);
+}
+.rb-root[data-mood="lookUp"] .rb-face {
+  transform: translate(0, -1.8px);
+}
+.rb-root[data-mood="lookDown"] .rb-face {
+  transform: translate(0, 1.8px);
+}
+
+/* ---------- idle: flutuação com a inclinação de viagem ---------- */
+
+@keyframes rb-breathe {
+  0%,
+  100% {
+    transform: rotate(var(--rb-travel-tilt)) translateY(0);
+  }
+  50% {
+    transform: rotate(var(--rb-travel-tilt)) translateY(-3px);
+  }
+}
+
+/* ---------- microinterações ---------- */
+
+@keyframes rb-blink {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  45%,
+  62% {
+    transform: scaleY(0.1);
+  }
+}
+
+.rb-root[data-micro="blink"] .rb-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: rb-blink 320ms ease-in-out;
+}
+
+.rb-root[data-micro="lookLeft"] .rb-face {
+  transform: translate(-2.6px, 0);
+}
+
+.rb-root[data-micro="lookRight"] .rb-face {
+  transform: translate(2.6px, 0);
+}
+
+@keyframes rb-head-tilt {
+  0%,
+  100% {
+    transform: rotate(var(--rb-head-tilt));
+  }
+  50% {
+    transform: rotate(calc(var(--rb-head-tilt) - 8deg));
+  }
+}
+
+.rb-root[data-micro="headTilt"] .rb-head,
+.rb-root[data-tilting] .rb-head {
+  animation: rb-head-tilt 900ms ease-in-out;
+}
+
+@keyframes rb-small-wave {
+  0%,
+  100% {
+    transform: rotate(var(--rb-arm-right));
+  }
+  30% {
+    transform: rotate(-96deg);
+  }
+  55% {
+    transform: rotate(-78deg);
+  }
+  80% {
+    transform: rotate(-92deg);
+  }
+}
+
+.rb-root[data-micro="smallWave"] .rb-arm-right {
+  animation: rb-small-wave 900ms ease-in-out;
+}
+
+@keyframes rb-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-9px);
+  }
+  70% {
+    transform: translateY(-2px);
+  }
+}
+
+.rb-root[data-micro="happyBounce"] .rb-svg,
+.rb-root[data-bouncing] .rb-svg {
+  animation: rb-bounce 520ms var(--rb-spring);
+}
+
+/* ---------- aceno das sequências ---------- */
+
+@keyframes rb-wave {
+  0%,
+  100% {
+    transform: rotate(var(--rb-arm-right));
+  }
+  15% {
+    transform: rotate(-118deg);
+  }
+  40% {
+    transform: rotate(-96deg);
+  }
+  65% {
+    transform: rotate(-122deg);
+  }
+  85% {
+    transform: rotate(-100deg);
+  }
+}
+
+.rb-root[data-waving] .rb-arm-right {
+  animation: rb-wave 1000ms ease-in-out;
+}
+
+/* ---------- espiar ---------- */
+
+.rb-root[data-state="peeking"] .rb-svg {
+  transform: rotate(7deg) translateX(-4px);
+}
+
+/* ---------- formulário em foco: tudo em repouso ---------- */
+
+.rb-root[data-state="formIdle"] .rb-float {
+  animation-duration: 7.5s;
+}
+
+.rb-root[data-state="formIdle"] .rb-glow {
+  opacity: 0.5;
+}
+
+/* ---------- debug ---------- */
+
+.rb-debug {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 21;
+  display: flex;
+  gap: 6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.72);
+  color: var(--cyan);
+  font-family: monospace;
+  font-size: 9px;
+  pointer-events: none;
+  transform: translate3d(var(--rb-x), calc(var(--rb-y) - 16px), 0);
+}
+
+/* ---------- acessibilidade ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-root,
+  .rb-float,
+  .rb-svg,
+  .rb-head,
+  .rb-body,
+  .rb-arm,
+  .rb-face,
+  .rb-eye {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .rb-svg {
+    transform: none !important;
+  }
+}
