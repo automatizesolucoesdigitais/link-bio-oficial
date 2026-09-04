@@ -1,113 +1,71 @@
-# vinext-starter
+# Link na Bio — Automatize Soluções Digitais
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+Página de bio link da Automatize: carrossel de serviços, cards de solução com
+preços, formulário que abre o WhatsApp com a mensagem pronta e um mascote robô
+que acompanha a navegação destacando os CTAs.
 
-## Prerequisites
+Publicado como site estático — a página é inteiramente pré-renderizada, então
+não há processo Node em produção.
 
-- Node.js `>=22.13.0`
-- Linux with `flock`, `curl`, and GNU `timeout`
+## Desenvolvimento
 
-## Sites Lifecycle
-
-The Sites lifecycle CLI runs the locked dependency install before returning this checkout. Edit the source under `app/`, then checkpoint when a coherent milestone is ready to inspect or share. The remote Sites builder runs `npm run build` against the pushed commit. Do not repeat install or build as a normal pre-checkpoint step.
-
-This starter does not use `wrangler.jsonc`.
-
-`install:ci` is intentionally a single, non-retrying `npm ci`. It refuses a concurrent install for the same project, consumes a matching image-seeded npm cache with `--prefer-offline` while retaining registry fallback for a missing cache object, otherwise downloads and verifies the complete vinext tarball recorded in `package-lock.json`, limits npm to one socket, and terminates a stalled install. `build` applies a short timeout. These helpers target Linux and use GNU `timeout`; they are not native macOS scripts.
-
-Scripts that need writable project-scoped home, npm, XDG, and temporary paths use `scripts/sites-env.sh`. The `dev` and `start` scripts honor the caller's runtime environment and keep Wrangler logs inside the checkout. The generated `.sites-runtime/` directory is disposable and ignored by Git.
-
-## Included Shape
-
-- edit site code under `app/`
-- `app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+npm install
+npx vite
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+O servidor sobe em <http://localhost:5173>. A primeira compilação leva ~20s.
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+> Os scripts `dev`, `build`, `lint` e `install:ci` do `package.json` vêm do
+> starter original e só funcionam em Linux (usam prefixo de variável no estilo
+> Unix e helpers com `flock`/`timeout` do GNU). No Windows, use `npx vite` para
+> desenvolver e `npm run build:static` para gerar o site.
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- In a Server Component, start sign-in with
-  `<a href={chatGPTSignInPath(returnTo)} target="_top">`. The auth helper
-  module is server-only; do not import it into a Client Component.
-- Do not use `fetch`, XHR, a client-side router, or a framework link that can
-  prefetch the sign-in route. SIWC must start as a top-level navigation.
-- Never request the AuthAPI authorization endpoint directly. The dispatch-owned
-  `/signin-with-chatgpt` route must start the SIWC flow.
-- Use `chatGPTSignOutPath(returnTo)` for browser sign-out links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+## Build de produção
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+```bash
+npm run build:static
+```
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+Gera `out/` com HTML, CSS, JS e imagens prontos para qualquer servidor de
+arquivos estáticos.
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+## Publicação (Coolify)
 
-## Diagnostic Commands
+O `Dockerfile` tem dois estágios: constrói com `node:22-alpine` e serve o
+resultado com `nginx:1.27-alpine`. A imagem final fica em torno de 30 MB.
 
-- `npm run install:ci`: perform the one bounded lockfile install
-- `npm run dev`: start the Vite/Vinext development server
-- `npm run build`: build the deployable Sites artifact
-- `npm run start`: start the built Vinext application
-- `npm test`: build and verify the rendered development-preview metadata
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+Configuração na aplicação do Coolify:
 
-Use build commands for targeted diagnosis after a remote failure, not as part of the normal checkpoint path.
+| Campo             | Valor        |
+| ----------------- | ------------ |
+| Build Pack        | `Dockerfile` |
+| Base Directory    | `/`          |
+| Port              | `80`         |
+| Variáveis de ambiente | nenhuma  |
 
-The timeout defaults can be overridden for a controlled canary with `SITES_INSTALL_TIMEOUT`, `SITES_INSTALL_KILL_AFTER`, `SITES_BUILD_TIMEOUT`, and `SITES_BUILD_KILL_AFTER`. A timeout fails the command; the helpers never retry an unchanged install or build.
+O `nginx.conf` define cache imutável para os assets com hash, cache curto para
+as fotos dos serviços e nenhum cache para o HTML — é isso que faz uma nova
+publicação aparecer imediatamente.
 
-## Learn More
+## Estrutura
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+```
+app/                     página, layout e o CSS global
+components/
+  HeroCarousel.tsx       carrossel do topo
+  BrandIcons.tsx         ícones de WhatsApp, Facebook e Instagram em SVG
+  RobotMascot/           mascote: SVG, posicionamento, coreografia e estados
+public/services/         fotos usadas nos cards e no carrossel
+```
+
+O mascote tem um modo de diagnóstico: `debug: true` em
+`components/RobotMascot/robotConfig.ts` mostra o estado atual e registra cada
+decisão de posicionamento em `window.__robotTrace`.
+
+## Sobre o scaffold do Cloudflare
+
+`worker/`, `db/`, `drizzle/`, `examples/` e `.openai/` vieram do starter
+original (alvo Cloudflare Workers) e não são usados pelo site. Ficam de fora do
+typecheck e da imagem Docker, mas foram mantidos no repositório caso um dia se
+queira voltar àquele fluxo.
